@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Countdown & Game Launching</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+    }
+    body {
+      background: url('https://i.imgur.com/GOLW9KL.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+    }
+    /* Main container that fills the entire mobile screen */
+    #main-container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 5vh;
+      padding-bottom: 2vh;
+    }
+    /* Three.js container takes top 60% of the screen */
+    #threejs-container {
+      width: 100%;
+      height: 60vh;
+    }
+    /* Countdown container with beautiful background */
+    #countdown-container {
+      background: linear-gradient(45deg, rgba(255,255,255,0.2), rgba(0,0,0,0.5));
+      border-radius: 15px;
+      padding: 20px 30px;
+      margin-top: 2vh; /* Push countdown a bit lower */
+      display: inline-block;
+    }
+    #countdown {
+      font-size: 5vh;
+      text-shadow: 2px 2px 4px #000;
+      margin: 0;
+    }
+    /* Notice styling */
+    .notice {
+      font-size: 2.5vh;
+      text-shadow: 1px 1px 3px #000;
+      padding: 0 10px;
+      margin-bottom: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div id="main-container">
+    <!-- Top section: Three.js container for 3D text and character -->
+    <div id="threejs-container"></div>
+    
+    <!-- Middle section: Countdown Timer with its background -->
+    <div id="countdown-container">
+      <div id="countdown"></div>
+    </div>
+    
+    <!-- Bottom section: Notice Message in English -->
+    <div class="notice">
+      I would like to thank all of you for helping me so much. God willing, when the game launches, we will reward those who helped us.
+    </div>
+  </div>
+  
+  <!-- Including Three.js and p5.js libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+  
+  <script>
+    // Countdown Timer Script
+    const countdownEl = document.getElementById('countdown');
+    // Set target date: April 1, 2025 12:00:00
+    const targetDate = new Date("April 1, 2025 12:00:00").getTime();
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const diff = targetDate - now;
+      if (diff < 0) {
+        countdownEl.innerHTML = "Time's up!";
+        clearInterval(countdownInterval);
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      countdownEl.innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+    }
+    const countdownInterval = setInterval(updateCountdown, 1000);
+    updateCountdown();
+    
+    // Three.js Scene Setup for 3D text and character
+    let scene, camera, renderer, textMesh, characterMesh;
+    initThreeJS();
+    
+    function initThreeJS() {
+      const container = document.getElementById('threejs-container');
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+      camera.position.z = 50;
+      
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+      container.appendChild(renderer.domElement);
+      
+      // Adding lights for enhanced appearance
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+      scene.add(ambientLight);
+      
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(0, 20, 10);
+      scene.add(directionalLight);
+      
+      // Load font for 3D text using Three.js FontLoader
+      const loader = new THREE.FontLoader();
+      loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+        const geometry = new THREE.TextGeometry('Lucky Slot Game Launching Soon', {
+          font: font,
+          size: 5,
+          height: 1,
+          curveSegments: 12,
+          bevelEnabled: true,
+          bevelThickness: 0.5,
+          bevelSize: 0.3,
+          bevelOffset: 0,
+          bevelSegments: 5
+        });
+        geometry.center();
+        // Using MeshPhongMaterial for a smooth, shiny look
+        const material = new THREE.MeshPhongMaterial({ color: 0xffd700, shininess: 100 });
+        textMesh = new THREE.Mesh(geometry, material);
+        scene.add(textMesh);
+      });
+      
+      // Create a character (a simple sphere representing the character)
+      const charGeometry = new THREE.SphereGeometry(2, 32, 32);
+      const charMaterial = new THREE.MeshPhongMaterial({ color: 0xffcc00 });
+      characterMesh = new THREE.Mesh(charGeometry, charMaterial);
+      characterMesh.position.set(0, -10, 0);
+      scene.add(characterMesh);
+      
+      animate();
+    }
+    
+    // Animation loop for character movement
+    let time = 0;
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      // Animate character: move in a circular and sine wave pattern
+      time += 0.01;
+      characterMesh.position.x = 10 * Math.cos(time);
+      characterMesh.position.y = -10 + 5 * Math.sin(time * 2);
+      
+      // The textMesh remains static
+      
+      renderer.render(scene, camera);
+    }
+    
+    // Adjust renderer on window resize for responsiveness
+    window.addEventListener('resize', () => {
+      const container = document.getElementById('threejs-container');
+      camera.aspect = container.offsetWidth / container.offsetHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
+  </script>
+</body>
+</html>
